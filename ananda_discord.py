@@ -36,16 +36,16 @@ def chatevent():
         if message.author == client.user:
             return
 
-        # メッセージを返す
-        try:
-            res_text = agent.run(message.content)
-        except discord.errors.ConnectionClosed as dec:
-            pass
-        except Exception as e:
-            print(e.args)
-            res_text = 'エラーが発生しました。'
-        await message.channel.send(res_text)
-
+        # mention されたときのみ反応
+        if client.user in message.mentions:
+            try:
+                res_text = agent.run(message.content)
+            except discord.errors.ConnectionClosed as dec:
+                pass
+            except Exception as e:
+                print(e.args)
+                res_text = 'エラーが発生しました。'
+            await message.channel.send(f'{message.author.mention} {res_text}')
 
     # クライアントの実行
     # ログレベルをERRORに設定。なぜなら "discord.gateway Shard ID None heartbeat blocked"
