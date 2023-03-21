@@ -13,6 +13,12 @@ export GOOGLE_API_KEY=...
 export GOOGLE_CSE_ID=...
 ```
 
+Install libraries:
+
+```bash
+pip install -r requirements.txt
+```
+
 Run:
 
 ```bash
