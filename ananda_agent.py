@@ -1,8 +1,8 @@
 # %%
 from access_summarization import AccessSummarization
-from langchain.agents import ZeroShotAgent, Tool, AgentExecutor, initialize_agent
+from wallclock import WallClock
+from langchain.agents import Tool, initialize_agent
 from langchain.memory import ConversationBufferWindowMemory
-from langchain import LLMChain
 from langchain.chat_models import ChatOpenAI
 from langchain.utilities import GoogleSearchAPIWrapper
 
@@ -10,10 +10,13 @@ from langchain.utilities import GoogleSearchAPIWrapper
 class AnandaAgent():
     def __init__(self,
                  asum=AccessSummarization(),
-                 search=GoogleSearchAPIWrapper()):
+                 search=GoogleSearchAPIWrapper(),
+                 clock=WallClock()):
         """AnandaAgent"""
         self.asum = asum
         self.search = search
+        self.clock = clock
+
         self.agent_chain = None
 
     def get_tool(self):
@@ -31,6 +34,11 @@ class AnandaAgent():
                 description="""最近の出来事や知らないことなど、検索して調べたいときに使用する。
                 """
             ),
+            Tool(
+                name="WallClock",
+                func=self.clock.run,
+                description="""現在時刻を取得したいときに使用する。"""
+            )
             # # self ask 用の機能
             # Tool(
             #     name="Intermediate Answer",
@@ -65,7 +73,7 @@ class AnandaAgent():
         # agent には chat-conversational-react-description, self-ask-with-search などがある。
         agent_chain = initialize_agent(
             tools=tools, llm=llm, agent="chat-conversational-react-description", verbose=True, memory=memory)
-            # tools=tools, llm=llm, agent="self-ask-with-search", verbose=True, memory=memory)
+        # tools=tools, llm=llm, agent="self-ask-with-search", verbose=True, memory=memory)
 
         return agent_chain
 
