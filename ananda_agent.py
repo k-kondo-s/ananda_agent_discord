@@ -1,21 +1,22 @@
 # %%
-from tools.access_summarization import AccessSummarization
-from tools.wallclock import WallClock
-from tools.self_ask import SelfAsk
-from langchain.agents import Tool, initialize_agent, ConversationalAgent
-from langchain.memory import ConversationBufferWindowMemory
+from langchain.agents import Tool, initialize_agent
 from langchain.chat_models import ChatOpenAI
+from langchain.memory import ConversationBufferWindowMemory
+
+from tools.ask_about_article import AskAboutArticle
+from tools.self_ask import SelfAsk
+from tools.wallclock import WallClock
 
 
 class AnandaAgent():
     def __init__(self,
-                 asum=AccessSummarization(),
                  clock=WallClock(),
-                 self_ask=SelfAsk()):
+                 self_ask=SelfAsk(),
+                 askaboutarticle=AskAboutArticle()):
         """AnandaAgent"""
-        self.asum = asum
         self.clock = clock
         self.self_ask = self_ask
+        self.askarticle = askaboutarticle
 
         self.agent_chain = None
 
@@ -23,10 +24,12 @@ class AnandaAgent():
         """tool を取得"""
         tools = [
             Tool(
-                name="AccessAndSummarizeIfAsked",
-                func=self.asum.run,
-                description="""与えられた URL にアクセスして、内容を要約することができる。
-                The input to this tool should be a URL string."""
+                name="AskAboutArticle",
+                func=self.askarticle.run,
+                description="""URL と質問のペアを与えると、その URL の記事について質問に答えることができる。
+                action_input は、URL と質問のペアのリストである。[url, question]という形式である。
+                質問がない場合は question=要約して とする""",
+                return_direct=True
             ),
             Tool(
                 name="WallClock",
@@ -89,5 +92,5 @@ class AnandaAgent():
 
 if __name__ == '__main__':
     agent = AnandaAgent()
-    result = agent.run('要約して https://note.com/kondokenji/n/n9b4cc9c052ef')
+    result = agent.run('https://note.com/kondokenji/n/n9b4cc9c052ef ChatGPT についてはなんと言っている？')
     print(result)
