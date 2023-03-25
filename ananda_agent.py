@@ -1,21 +1,21 @@
 # %%
-from access_summarization import AccessSummarization
-from wallclock import WallClock
-from langchain.agents import Tool, initialize_agent
+from tools.access_summarization import AccessSummarization
+from tools.wallclock import WallClock
+from tools.self_ask import SelfAsk
+from langchain.agents import Tool, initialize_agent, ConversationalAgent
 from langchain.memory import ConversationBufferWindowMemory
 from langchain.chat_models import ChatOpenAI
-from langchain.utilities import GoogleSearchAPIWrapper
 
 
 class AnandaAgent():
     def __init__(self,
                  asum=AccessSummarization(),
-                 search=GoogleSearchAPIWrapper(),
-                 clock=WallClock()):
+                 clock=WallClock(),
+                 self_ask=SelfAsk()):
         """AnandaAgent"""
         self.asum = asum
-        self.search = search
         self.clock = clock
+        self.self_ask = self_ask
 
         self.agent_chain = None
 
@@ -25,26 +25,19 @@ class AnandaAgent():
             Tool(
                 name="AccessAndSummarizeIfAsked",
                 func=self.asum.run,
-                description="""使用できない。与えられた URL を要約するように指示があった場合にのみ使用できる。
+                description="""与えられた URL にアクセスして、内容を要約することができる。
                 The input to this tool should be a URL string."""
-            ),
-            Tool(
-                name="Search",
-                func=self.search.run,
-                description="""最近の出来事や知らないことなど、検索して調べたいときに使用する。
-                """
             ),
             Tool(
                 name="WallClock",
                 func=self.clock.run,
-                description="""現在時刻を取得したいときに使用する。"""
-            )
-            # # self ask 用の機能
-            # Tool(
-            #     name="Intermediate Answer",
-            #     func=self.search.run,
-            #     description="useful for when you need to ask with search"
-            # )
+                description="""現在時刻を取得することができる。"""
+            ),
+            Tool(
+                name="SelfAskSearch",
+                func=self.self_ask.run,
+                description="最近の出来事や世界の状態を知ることができる。"
+            ),
         ]
         return tools
 
@@ -70,17 +63,19 @@ class AnandaAgent():
         memory = self.make_memory()
 
         # agent_chain を作成
-        # agent には chat-conversational-react-description, self-ask-with-search などがある。
         agent_chain = initialize_agent(
-            tools=tools, llm=llm, agent="chat-conversational-react-description", verbose=True, memory=memory)
-        # tools=tools, llm=llm, agent="self-ask-with-search", verbose=True, memory=memory)
+            tools=tools,
+            llm=llm,
+            agent="chat-conversational-react-description",
+            verbose=True,
+            memory=memory)
 
         return agent_chain
 
     def run(self, input_text):
         """実行"""
 
-        print('input_text:', input_text)
+        print('\ninput_text:', input_text)
 
         # agent_chain がなければ新たに作る。 lazy にするため。
         if self.agent_chain is None:
