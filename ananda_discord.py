@@ -44,7 +44,7 @@ def chatevent():
                 pass
             except Exception as e:
                 print(e.args)
-                res_text = 'エラーが発生しました。'
+                res_text = f'エラーが発生しました:\n```\n{e.args}\n```'
             await message.channel.send(f'{message.author.mention} {res_text}')
 
     # クライアントの実行
